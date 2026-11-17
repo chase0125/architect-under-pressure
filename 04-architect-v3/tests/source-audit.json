@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "playerCopyChecks": 74,
+  "acceptancePaths": 8,
+  "note": "The Word version adds the 1C -> 2A -> 3A -> 4B -> 5A acceptance path."
+}

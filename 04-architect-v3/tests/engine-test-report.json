@@ -1,0 +1,168 @@
+{
+  "result": "PASS",
+  "html": "Architect_V3.html",
+  "runtime": "v22.16.0",
+  "assertions": 27842,
+  "exhaustivePaths": 243,
+  "acceptanceTests": [
+    {
+      "path": [
+        "1C",
+        "2A",
+        "3A",
+        "4B",
+        "5C"
+      ],
+      "ending": "STRONG RECOVERY",
+      "passed": true,
+      "scores": {
+        "rel": 100,
+        "sec": 70,
+        "cost": 65,
+        "spd": 60,
+        "jud": 100
+      }
+    },
+    {
+      "path": [
+        "1B",
+        "2B",
+        "3A",
+        "4B",
+        "5C"
+      ],
+      "ending": "STRONG RECOVERY",
+      "passed": true,
+      "scores": {
+        "rel": 100,
+        "sec": 70,
+        "cost": 40,
+        "spd": 60,
+        "jud": 100
+      }
+    },
+    {
+      "path": [
+        "1C",
+        "2A",
+        "3B",
+        "4B",
+        "5C"
+      ],
+      "ending": "RECOVERY WITH TRADEOFFS",
+      "passed": true,
+      "scores": {
+        "rel": 95,
+        "sec": 60,
+        "cost": 65,
+        "spd": 65,
+        "jud": 100
+      }
+    },
+    {
+      "path": [
+        "1C",
+        "2C",
+        "3A",
+        "4B",
+        "5C"
+      ],
+      "ending": "RECOVERY WITH TRADEOFFS",
+      "passed": true,
+      "scores": {
+        "rel": 95,
+        "sec": 70,
+        "cost": 40,
+        "spd": 60,
+        "jud": 100
+      }
+    },
+    {
+      "path": [
+        "1C",
+        "2A",
+        "3C",
+        "4B",
+        "5B"
+      ],
+      "ending": "SERVICE RESTORED, CUSTOMER IMPACT REMAINS",
+      "passed": true,
+      "scores": {
+        "rel": 100,
+        "sec": 25,
+        "cost": 50,
+        "spd": 45,
+        "jud": 90
+      }
+    },
+    {
+      "path": [
+        "1C",
+        "2A",
+        "3A",
+        "4C",
+        "5B"
+      ],
+      "ending": "SERVICE RESTORED, CUSTOMER IMPACT REMAINS",
+      "passed": true,
+      "scores": {
+        "rel": 70,
+        "sec": 70,
+        "cost": 55,
+        "spd": 60,
+        "jud": 80
+      }
+    },
+    {
+      "path": [
+        "1C",
+        "2A",
+        "3A",
+        "4B",
+        "5A"
+      ],
+      "ending": "RECOVERY WITH TRADEOFFS",
+      "passed": true,
+      "scores": {
+        "rel": 80,
+        "sec": 70,
+        "cost": 65,
+        "spd": 70,
+        "jud": 90
+      }
+    },
+    {
+      "path": [
+        "1A",
+        "2C",
+        "3C",
+        "4C",
+        "5A"
+      ],
+      "ending": "INCIDENT REOPENED / UNRESOLVED",
+      "passed": true,
+      "scores": {
+        "rel": 30,
+        "sec": 25,
+        "cost": 0,
+        "spd": 100,
+        "jud": 0
+      }
+    }
+  ],
+  "endingDistribution": {
+    "INCIDENT REOPENED / UNRESOLVED": 69,
+    "SERVICE RESTORED, CUSTOMER IMPACT REMAINS": 90,
+    "STRONG RECOVERY": 12,
+    "RECOVERY WITH TRADEOFFS": 72
+  },
+  "checked": [
+    "Exact source prompts, choices, consequences, metrics, deltas, flags, and debriefs",
+    "All 243 paths including every scene-start and post-choice environment",
+    "Both Scene 2 introductions and inherited environment",
+    "Both Scene 5 conditional branches; broadBlock does not itself reopen incident",
+    "Consequence/Continue gating and repeated/out-of-scene selection no-ops",
+    "Ending priority, inclusive thresholds, clamping to 0-100, and seeded flag clearing",
+    "Clean initial state for replay; no implicit clearing of unresolved risks"
+  ]
+}

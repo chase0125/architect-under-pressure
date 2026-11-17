@@ -1,0 +1,25 @@
+{
+  "result": "PASS",
+  "browser": "144.0.7559.96",
+  "html": "Architect_V3.html",
+  "exhaustiveDomPaths": 243,
+  "domAssertions": 50537,
+  "nativePointerAcceptancePaths": 2,
+  "mobileAssertions": 409,
+  "viewportWidths": [
+    1280,
+    390,
+    320
+  ],
+  "javascriptErrors": [],
+  "externalHttpRequests": [],
+  "loadMode": "Offline document injection; file:// navigation is not exercised by this harness",
+  "additionalChecks": [
+    "Offline execution of shipped HTML via document injection; image load verified",
+    "Native choice and Continue double-click protection",
+    "Keyboard Enter operation and focus progression",
+    "Replay clears all scores, flags, log entries, and old callbacks",
+    "No horizontal overflow at desktop and 390px/320px mobile widths",
+    "Reduced-motion preference and missing-image fallback"
+  ]
+}

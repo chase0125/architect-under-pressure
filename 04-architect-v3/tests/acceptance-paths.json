@@ -1,0 +1,82 @@
+[
+  {
+    "path": [
+      "1C",
+      "2A",
+      "3A",
+      "4B",
+      "5C"
+    ],
+    "ending": "STRONG RECOVERY"
+  },
+  {
+    "path": [
+      "1B",
+      "2B",
+      "3A",
+      "4B",
+      "5C"
+    ],
+    "ending": "STRONG RECOVERY"
+  },
+  {
+    "path": [
+      "1C",
+      "2A",
+      "3B",
+      "4B",
+      "5C"
+    ],
+    "ending": "RECOVERY WITH TRADEOFFS"
+  },
+  {
+    "path": [
+      "1C",
+      "2C",
+      "3A",
+      "4B",
+      "5C"
+    ],
+    "ending": "RECOVERY WITH TRADEOFFS"
+  },
+  {
+    "path": [
+      "1C",
+      "2A",
+      "3C",
+      "4B",
+      "5B"
+    ],
+    "ending": "SERVICE RESTORED, CUSTOMER IMPACT REMAINS"
+  },
+  {
+    "path": [
+      "1C",
+      "2A",
+      "3A",
+      "4C",
+      "5B"
+    ],
+    "ending": "SERVICE RESTORED, CUSTOMER IMPACT REMAINS"
+  },
+  {
+    "path": [
+      "1C",
+      "2A",
+      "3A",
+      "4B",
+      "5A"
+    ],
+    "ending": "RECOVERY WITH TRADEOFFS"
+  },
+  {
+    "path": [
+      "1A",
+      "2C",
+      "3C",
+      "4C",
+      "5A"
+    ],
+    "ending": "INCIDENT REOPENED / UNRESOLVED"
+  }
+]

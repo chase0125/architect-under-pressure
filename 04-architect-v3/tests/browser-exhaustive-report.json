@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "htmlSha256": "108fe95808f8ca91cddb39a845ead5ba0b07af7807dd7ef60d82c6960f42334d",
+  "exhaustiveDomPaths": 243,
+  "domAssertions": 50537,
+  "javascriptErrors": [],
+  "externalHttpRequests": [],
+  "source": "Completed exhaustive DOM run; native interaction and mobile checks were completed as a separate test stage."
+}

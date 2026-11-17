@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Architect Under Pressure: a five-decision incident-response game.">
+    <title>Architect Under Pressure</title>
+    <style>
+/* --- CSS STYLES --- */
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --text-main: #c9d1d9;
+            --text-accent: #58a6ff;
+            --alert-color: #f85149;
+            --warning-color: #d29922;
+            --stable-color: #3fb950;
+            --button-bg: #21262d;
+            --button-hover: #30363d;
+            --border-color: #30363d;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 600px; 
+            background-color: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px; /* Slightly reduced for mobile */
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: var(--text-accent);
+            text-align: center;
+            font-size: 1.3rem;
+            margin-top: 0;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        #decision-tracker {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 10px;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        #env-metrics {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            padding: 8px;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .status-critical { color: var(--alert-color); animation: blink 1.5s infinite; }
+        .status-degraded { color: var(--warning-color); }
+        .status-stable { color: var(--stable-color); }
+
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* Image Placeholder - Height reduced for mobile */
+        #scene-image-container {
+            width: 100%;
+            height: 120px; 
+            background-color: #000;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        #scene-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Stats Bar */
+        #stats-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            background-color: var(--bg-color);
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 0.80rem;
+        }
+
+        .stat { margin: 2px 3px; }
+
+        /* Story Text */
+        #story-text, #consequence-text {
+            font-size: 1rem;
+            line-height: 1.4;
+            margin-bottom: 15px;
+            white-space: pre-wrap; 
+        }
+
+        #consequence-text {
+            color: var(--warning-color);
+            border-left: 3px solid var(--warning-color);
+            padding-left: 10px;
+            display: none; /* Hidden until a choice is made */
+        }
+
+        /* Buttons */
+        .choice-btn, .continue-btn {
+            display: block;
+            width: 100%;
+            background-color: var(--button-bg);
+            color: var(--text-accent);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .choice-btn:hover, .continue-btn:hover { background-color: var(--button-hover); }
+        
+        .continue-btn {
+            text-align: center;
+            border-color: var(--stable-color);
+            color: var(--stable-color);
+            display: none;
+        }
+
+        /* End Screen Formatting */
+        .end-stat { font-size: 1.1rem; margin: 8px 0; }
+        .center-text { text-align: center; }
+        /* V3: retain the V2 layout; add only report/accessibility support. */
+        [hidden] { display: none !important; }
+        #consequence-text:not([hidden]), #continue-btn:not([hidden]) { display: block; }
+        button { box-sizing: border-box; overflow-wrap: anywhere; }
+        button:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 3px; }
+        button:disabled { cursor: default; opacity: 0.6; }
+        #scene-image-fallback { color: var(--text-main); font-size: 0.85rem; text-align: center; }
+        #end-title { margin-bottom: 5px; overflow-wrap: anywhere; }
+        #end-summary { margin-bottom: 20px; line-height: 1.5; }
+        .report-rule { border: 0; border-top: 1px solid var(--border-color); margin: 20px 0; }
+        #decision-log-heading { font-size: 1.1rem; }
+        #decision-log { text-align: left; padding-left: 25px; line-height: 1.5; }
+        #decision-log li { padding-left: 3px; margin-bottom: 16px; }
+        .log-choice-id { font-weight: bold; color: var(--text-accent); }
+        .log-debrief { margin: 3px 0 0; }
+        .report-button { text-align: center; }
+        #consulting-btn { border-color: var(--alert-color); color: var(--alert-color); }
+        @media (prefers-reduced-motion: reduce) {
+            .status-critical { animation: none; }
+            .choice-btn, .continue-btn { transition: none; }
+        }
+
+    </style>
+</head>
+<body>
+    <main id="game-container" data-version="3">
+        <h1 id="game-title">Architect Under Pressure</h1>
+        <div id="decision-tracker" aria-live="polite">Decision 1 of 5</div>
+        <section id="game-ui" aria-label="Incident response">
+            <div class="header-bar">
+                <span>Status: <span id="env-status" class="status-critical">CRITICAL</span></span>
+                <span id="time-display">2:17 AM</span>
+            </div>
+            <div id="env-metrics" class="status-critical">Checkout p95: 4.8s | Error rate: 9% | Cloud SQL CPU: 96% | Cloud Run CPU: 41%</div>
+            <div id="scene-image-container">
+                <img id="scene-image" src="ops_room.jpg" alt="Pixel-art operations room during an incident">
+                <span id="scene-image-fallback" hidden>[ Pixel Art: Dark Ops Room ]</span>
+            </div>
+            <div id="stats-bar" aria-label="Player scores">
+                <div class="stat" title="Reliability">REL: <span id="stat-rel">50</span></div>
+                <div class="stat" title="Security">SEC: <span id="stat-sec">50</span></div>
+                <div class="stat" title="Cost Efficiency">CST-EFF: <span id="stat-cst">50</span></div>
+                <div class="stat" title="Response Speed">SPD: <span id="stat-spd">50</span></div>
+                <div class="stat" title="Judgment">JUD: <span id="stat-jud">50</span></div>
+            </div>
+            <div id="story-text" tabindex="-1">Loading...</div>
+            <div id="consequence-text" tabindex="-1" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+            <div id="choices-container" role="group" aria-label="Choose your response"></div>
+            <button id="continue-btn" type="button" class="continue-btn" hidden disabled>[ Continue ]</button>
+        </section>
+        <section id="aftermath" class="center-text" aria-label="Aftermath report" hidden>
+            <h2 id="end-title" tabindex="-1"></h2>
+            <p id="end-summary"></p>
+            <hr class="report-rule">
+            <div id="end-scores"></div>
+            <hr class="report-rule">
+            <h2 id="decision-log-heading">Decision Log</h2>
+            <ol id="decision-log"></ol>
+            <hr class="report-rule">
+            <button id="replay-btn" type="button" class="choice-btn report-button">[ Play Again ]</button>
+            <!-- Preserved V2 placeholder. No consulting destination was supplied. -->
+            <button id="consulting-btn" type="button" class="choice-btn report-button">[ Stress-Test My Real Architecture ]</button>
+        </section>
+        <noscript>This game requires JavaScript. Enable it in your browser to play.</noscript>
+    </main>
+
+    <!-- 1. EXACT SCENARIO DATA: edit only with Duke's approved specification. -->
+    <script id="scenario-data" type="application/json">
+{
+  "version": 3,
+  "scoreKeys": [
+    "rel",
+    "sec",
+    "cost",
+    "spd",
+    "jud"
+  ],
+  "flagNames": [
+    "accountsCompromised",
+    "attackActive",
+    "attackContained",
+    "attackPartiallyContained",
+    "backlogControlled",
+    "broadBlock",
+    "conservativeRecovery",
+    "dbScaled",
+    "fullTrafficRestored",
+    "guardedRamp",
+    "incidentReopened",
+    "indexHotfix",
+    "queryFixed",
+    "recoveryDataGap",
+    "recoveryOverload",
+    "releaseRolledBack",
+    "rootCauseFoundEarly",
+    "scaledWrongLayer",
+    "stableEnd",
+    "unguardedRamp",
+    "workaroundOnly"
+  ],
+  "scenes": [
+    {
+      "id": 1,
+      "title": "The bottleneck",
+      "time": "2:17 AM",
+      "start": {
+        "mode": "fixed",
+        "status": "CRITICAL",
+        "metrics": "Checkout p95: 4.8s | Error rate: 9% | Cloud SQL CPU: 96% | Cloud Run CPU: 41%"
+      },
+      "prompt": "Pager alert: checkout latency is climbing fast during a scheduled product launch. Cloud SQL is saturated, but Cloud Run still has headroom.\n\nCEO: \"Traffic is exploding. Keep checkout online.\"\n\nWhat do you do first?",
+      "choices": [
+        {
+          "id": "1A",
+          "text": "Increase the Cloud Run maximum instance limit",
+          "effects": {
+            "rel": -5,
+            "sec": 0,
+            "cost": -10,
+            "spd": 5,
+            "jud": -10
+          },
+          "setFlags": [
+            "scaledWrongLayer"
+          ],
+          "clearFlags": [],
+          "debrief": "You scaled the application layer even though the database was the limiting resource.",
+          "outcome": {
+            "consequence": "Cloud Run adds capacity, but the database becomes even more constrained as more application instances compete for database connections. Checkout slows further.",
+            "status": "CRITICAL",
+            "metrics": "Checkout p95: 5.6s | Error rate: 13% | Cloud SQL CPU: 99% | Cloud Run CPU: 36%"
+          }
+        },
+        {
+          "id": "1B",
+          "text": "Scale Cloud SQL up one tier",
+          "effects": {
+            "rel": 10,
+            "sec": 0,
+            "cost": -15,
+            "spd": 10,
+            "jud": -5
+          },
+          "setFlags": [
+            "dbScaled"
+          ],
+          "clearFlags": [],
+          "debrief": "You bought immediate database headroom, improving availability at additional cost without yet fixing root cause.",
+          "outcome": {
+            "consequence": "Database headroom improves and checkout errors fall, but the expensive query is still running. You bought time without removing the cause.",
+            "status": "DEGRADED",
+            "metrics": "Checkout p95: 2.1s | Error rate: 4% | Cloud SQL CPU: 76% | Cloud Run CPU: 43%"
+          }
+        },
+        {
+          "id": "1C",
+          "text": "Inspect Cloud Monitoring and Query Insights first",
+          "effects": {
+            "rel": 5,
+            "sec": 0,
+            "cost": 5,
+            "spd": -5,
+            "jud": 15
+          },
+          "setFlags": [
+            "rootCauseFoundEarly"
+          ],
+          "clearFlags": [],
+          "debrief": "You diagnosed the bottleneck before adding infrastructure.",
+          "outcome": {
+            "consequence": "Within two minutes, Query Insights shows one checkout query consuming most database time. The regression began immediately after the 1:50 AM release.",
+            "status": "DEGRADED",
+            "metrics": "Top query: 63% of DB time | Release age: 27 min | Error rate: 9%"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "The query regression",
+      "time": "2:24 AM",
+      "start": {
+        "mode": "inherit"
+      },
+      "prompt": "A few minutes later, the database evidence is clear: the 1:50 AM release introduced a checkout query that scans the orders table because a supporting index was omitted. The previous release is still available, and the schema is backward compatible.\n\nMarketing has paused the paid campaign while checkout is degraded.\n\nWhat do you do?",
+      "choices": [
+        {
+          "id": "2A",
+          "text": "Roll back the 1:50 AM release",
+          "effects": {
+            "rel": 15,
+            "sec": 0,
+            "cost": 5,
+            "spd": 10,
+            "jud": 15
+          },
+          "setFlags": [
+            "queryFixed",
+            "releaseRolledBack"
+          ],
+          "clearFlags": [
+            "workaroundOnly"
+          ],
+          "debrief": "You used a reversible rollback to restore checkout quickly and removed the query regression.",
+          "outcome": {
+            "consequence": "Rollback completes in about three minutes. The regressed query disappears and checkout returns close to baseline. The new feature is temporarily unavailable, but production stabilizes.",
+            "status": "STABLE",
+            "metrics": "Checkout p95: 420ms | Error rate: 0.8% | Cloud SQL CPU: 44%"
+          }
+        },
+        {
+          "id": "2B",
+          "text": "Create the missing index concurrently and keep the release live",
+          "effects": {
+            "rel": 10,
+            "sec": 0,
+            "cost": 0,
+            "spd": -5,
+            "jud": 10
+          },
+          "setFlags": [
+            "queryFixed",
+            "indexHotfix"
+          ],
+          "clearFlags": [
+            "workaroundOnly"
+          ],
+          "debrief": "You fixed the query in place while accepting a longer period of elevated database load.",
+          "outcome": {
+            "consequence": "The concurrent index avoids blocking normal table access, but it consumes database capacity while building. After about eight minutes, the query drops from seconds to milliseconds and checkout stabilizes.",
+            "status": "STABLE",
+            "metrics": "Checkout p95: 650ms | Error rate: 1.2% | Cloud SQL CPU: 58% | Index: complete"
+          }
+        },
+        {
+          "id": "2C",
+          "text": "Scale Cloud SQL again and leave the release unchanged",
+          "effects": {
+            "rel": 10,
+            "sec": 0,
+            "cost": -20,
+            "spd": 10,
+            "jud": -10
+          },
+          "setFlags": [
+            "workaroundOnly"
+          ],
+          "clearFlags": [
+            "queryFixed"
+          ],
+          "debrief": "You restored headroom by scaling around the regression, leaving the root cause in production.",
+          "outcome": {
+            "consequence": "Checkout recovers enough to continue, but the regressed query remains. The larger database is masking the problem rather than fixing it.",
+            "status": "DEGRADED",
+            "metrics": "Checkout p95: 1.4s | Error rate: 2.6% | Cloud SQL CPU: 72% | DB size: +2 tiers"
+          }
+        }
+      ],
+      "earlyDiagnosisPrompt": "Your investigation confirms the cause: the 1:50 AM release introduced a checkout query that scans the orders table because a supporting index was omitted. The previous release is still available, and the schema is backward compatible.\n\nMarketing has paused the paid campaign while checkout is degraded.\n\nWhat do you do?"
+    },
+    {
+      "id": 3,
+      "title": "The login attack",
+      "time": "2:38 AM",
+      "start": {
+        "mode": "fixed",
+        "status": "CRITICAL",
+        "metrics": "Failed logins: 7,800/min | Suspicious successful logins: 23"
+      },
+      "prompt": "While checkout is recovering, authentication monitoring flags 7,800 failed logins per minute against many customer accounts. Most attempts come from a relatively small set of client networks, but legitimate login traffic is also elevated. A few suspicious sessions have already succeeded.\n\nWhat do you do?",
+      "choices": [
+        {
+          "id": "3A",
+          "text": "Rate-limit /login at the edge and force resets for suspicious accounts",
+          "effects": {
+            "rel": 5,
+            "sec": 20,
+            "cost": 0,
+            "spd": 5,
+            "jud": 15
+          },
+          "setFlags": [
+            "attackContained"
+          ],
+          "clearFlags": [
+            "attackActive"
+          ],
+          "debrief": "You used targeted abuse controls and account remediation instead of treating malicious traffic as a pure capacity problem.",
+          "outcome": {
+            "consequence": "The failed-login rate falls sharply. Legitimate users see minor friction, suspicious sessions are revoked, and affected accounts are forced through password reset.",
+            "status": "STABLE",
+            "metrics": "Failed logins: 310/min | Suspicious sessions: revoked | Threat: CONTAINED"
+          }
+        },
+        {
+          "id": "3B",
+          "text": "Block the suspicious IP ranges immediately",
+          "effects": {
+            "rel": 0,
+            "sec": 10,
+            "cost": 0,
+            "spd": 10,
+            "jud": -5
+          },
+          "setFlags": [
+            "broadBlock",
+            "attackPartiallyContained"
+          ],
+          "clearFlags": [
+            "attackActive"
+          ],
+          "debrief": "You reduced attack volume quickly, but used a broad control that also blocked legitimate customers.",
+          "outcome": {
+            "consequence": "Attack volume drops quickly, but some legitimate users behind shared networks are blocked. New attacker IPs begin appearing, so the control is only partially effective.",
+            "status": "DEGRADED",
+            "metrics": "Failed logins: 1,900/min | Legitimate blocks: elevated | Threat: PARTIAL"
+          }
+        },
+        {
+          "id": "3C",
+          "text": "Scale authentication capacity and continue monitoring",
+          "effects": {
+            "rel": 5,
+            "sec": -25,
+            "cost": -15,
+            "spd": 10,
+            "jud": -15
+          },
+          "setFlags": [
+            "attackActive",
+            "accountsCompromised"
+          ],
+          "clearFlags": [
+            "attackContained"
+          ],
+          "debrief": "You kept authentication available but failed to contain the credential attack, allowing additional account compromise.",
+          "outcome": {
+            "consequence": "The login service remains responsive, but the credential attack continues. More customer accounts are taken over because extra capacity addressed availability, not abuse.",
+            "status": "CRITICAL",
+            "metrics": "Login p95: 280ms | Compromised accounts: 61 | Threat: ACTIVE"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "The recovery backlog",
+      "time": "2:47 AM",
+      "start": {
+        "mode": "backlog",
+        "metrics": "Pub/Sub backlog: 18,400 messages | Oldest message: 21 min | Cloud SQL CPU: 84%"
+      },
+      "prompt": "During the earlier slowdown, order-confirmation workers fell behind. Pub/Sub now has 18,400 undelivered messages. As the workers scale to catch up, database CPU starts climbing again.\n\nCustomer-facing checkout is currently usable.\n\nHow do you recover the backlog?",
+      "choices": [
+        {
+          "id": "4A",
+          "text": "Let the workers scale freely and drain the backlog as fast as possible",
+          "effects": {
+            "rel": -10,
+            "sec": 0,
+            "cost": -10,
+            "spd": 15,
+            "jud": -10
+          },
+          "setFlags": [
+            "recoveryOverload"
+          ],
+          "clearFlags": [],
+          "debrief": "You optimized backlog speed at the expense of renewed pressure on the customer-facing database.",
+          "outcome": {
+            "consequence": "The backlog drops quickly, but the workers hammer the same database you just stabilized. Customer checkout latency climbs above two seconds again.",
+            "status": "DEGRADED",
+            "metrics": "Backlog: 3,200 | Cloud SQL CPU: 92% | Checkout p95: 2.3s"
+          }
+        },
+        {
+          "id": "4B",
+          "text": "Cap worker concurrency and drain the backlog gradually",
+          "effects": {
+            "rel": 15,
+            "sec": 0,
+            "cost": 5,
+            "spd": -5,
+            "jud": 15
+          },
+          "setFlags": [
+            "backlogControlled"
+          ],
+          "clearFlags": [],
+          "debrief": "You protected the primary workload by throttling recovery work and accepting a slower backlog drain.",
+          "outcome": {
+            "consequence": "The queue drains more slowly, but database CPU stays below 60% and customer-facing checkout remains healthy.",
+            "status": "STABLE",
+            "metrics": "Backlog: 9,600 and falling | Cloud SQL CPU: 57% | Checkout p95: 480ms"
+          }
+        },
+        {
+          "id": "4C",
+          "text": "Purge the backlog and reconcile affected orders from the database later",
+          "effects": {
+            "rel": -20,
+            "sec": 0,
+            "cost": -5,
+            "spd": 15,
+            "jud": -25
+          },
+          "setFlags": [
+            "recoveryDataGap"
+          ],
+          "clearFlags": [],
+          "debrief": "You cleared the queue by discarding pending work, creating a customer-impacting reconciliation problem.",
+          "outcome": {
+            "consequence": "The queue clears immediately, but 1,126 confirmation and downstream fulfillment events are no longer processed automatically. A manual reconciliation effort is now required.",
+            "status": "DEGRADED",
+            "metrics": "Backlog: 0 | Unreconciled orders: 1,126 | Manual recovery: REQUIRED"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Return to launch traffic",
+      "time": "3:05 AM",
+      "start": {
+        "mode": "returnToTraffic",
+        "metrics": "Paid campaign: PAUSED | Customer traffic: baseline | Incident: RECOVERING"
+      },
+      "prompt": "The business wants the launch back. The paid campaign has been paused since checkout degraded.\n\nCEO: \"Can we restart the campaign at full volume now? Every minute paused costs us sales.\"\n\nWhat do you recommend?",
+      "choices": [
+        {
+          "id": "5A",
+          "text": "Restore full campaign traffic immediately",
+          "effects": {
+            "rel": -10,
+            "sec": 0,
+            "cost": 0,
+            "spd": 15,
+            "jud": -10
+          },
+          "setFlags": [
+            "fullTrafficRestored",
+            "unguardedRamp"
+          ],
+          "clearFlags": [],
+          "debrief": "You restored full launch traffic without a staged validation period.",
+          "riskFlags": [
+            "workaroundOnly",
+            "attackActive",
+            "recoveryOverload",
+            "recoveryDataGap"
+          ],
+          "reopenOnRisk": true,
+          "outcomes": {
+            "safe": {
+              "consequence": "Full traffic returns and the platform remains available, but you skipped a validation window and accepted unnecessary operational risk.",
+              "status": "DEGRADED",
+              "metrics": "Campaign: 100% | Checkout p95: 820ms | Incident: MONITORING"
+            },
+            "risk": {
+              "consequence": "Full campaign traffic hits an environment with unresolved risk. Customer-facing errors climb again and the incident is reopened.",
+              "status": "CRITICAL",
+              "metrics": "Campaign: 100% | Error rate: 18% | Incident: REOPENED"
+            }
+          }
+        },
+        {
+          "id": "5B",
+          "text": "Keep the campaign paused until the system is stable for 30 minutes",
+          "effects": {
+            "rel": 15,
+            "sec": 0,
+            "cost": 0,
+            "spd": -15,
+            "jud": 10
+          },
+          "setFlags": [
+            "conservativeRecovery",
+            "stableEnd"
+          ],
+          "clearFlags": [],
+          "debrief": "You favored a longer observation window over launch speed.",
+          "outcome": {
+            "consequence": "You hold traffic at baseline and keep the incident open for observation. The platform remains stable, but the business gives up additional launch revenue while you validate recovery.",
+            "status": "STABLE",
+            "metrics": "Campaign: PAUSED | Checkout p95: 430ms | Observation window: 30 min"
+          }
+        },
+        {
+          "id": "5C",
+          "text": "Resume at 10%, watch SLOs for 10 minutes, then ramp if healthy",
+          "effects": {
+            "rel": 10,
+            "sec": 0,
+            "cost": 0,
+            "spd": 5,
+            "jud": 20
+          },
+          "setFlags": [
+            "guardedRamp",
+            "stableEnd"
+          ],
+          "clearFlags": [],
+          "debrief": "You used a guarded traffic ramp with explicit health thresholds rather than making an all-or-nothing launch decision.",
+          "riskFlags": [
+            "workaroundOnly",
+            "attackActive",
+            "recoveryOverload",
+            "recoveryDataGap"
+          ],
+          "reopenOnRisk": false,
+          "outcomes": {
+            "safe": {
+              "consequence": "The 10% canary stays within latency and error thresholds. Traffic ramps gradually to 100% and the launch resumes without reopening the incident.",
+              "status": "STABLE",
+              "metrics": "Campaign: 100% | Checkout p95: 470ms | Error rate: 0.9% | SLOs: HEALTHY"
+            },
+            "risk": {
+              "consequence": "The 10% canary exposes the remaining weakness before full traffic returns. Your rollback threshold trips, the campaign is paused again, and production stays available while the open issue is addressed.",
+              "status": "STABLE",
+              "metrics": "Campaign: PAUSED | Production: STABLE | Remaining risk: DETECTED"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "endings": [
+    {
+      "id": "reopened",
+      "title": "INCIDENT REOPENED / UNRESOLVED",
+      "summary": "The final recovery decision returned load to an environment with unresolved risk, and the incident became active again. Production is not in a clean recovery state.",
+      "tone": "critical"
+    },
+    {
+      "id": "customerImpact",
+      "title": "SERVICE RESTORED, CUSTOMER IMPACT REMAINS",
+      "summary": "The core service is available, but the incident caused customer-impacting security or order-processing problems that still require remediation. Availability alone does not make this a clean recovery.",
+      "tone": "degraded"
+    },
+    {
+      "id": "strong",
+      "title": "STRONG RECOVERY",
+      "summary": "You diagnosed and mitigated the incident without leaving a major operational shortcut behind. The platform is stable, customer-impacting risks are contained, and the return to traffic was controlled.",
+      "tone": "stable"
+    },
+    {
+      "id": "tradeoffs",
+      "title": "RECOVERY WITH TRADEOFFS",
+      "summary": "Production is available, but your recovery path left meaningful operational tradeoffs such as unnecessary spend, broad customer blocking, an unfixed regression, renewed database pressure, or an unguarded return to traffic.",
+      "tone": "degraded"
+    }
+  ]
+}
+    </script>
+
+    <!-- 2. PURE GAME ENGINE: scoring, flags, scene starts, and ending priority. -->
+    <script id="game-engine">
+/*
+ * V3 deterministic engine. Scenario data above is transcribed from Duke's spec.
+ * This section has no DOM, network, AI, random numbers, or gameplay timers.
+ * Pure transitions make all 3^5 paths independently testable.
+ */
+(function exposeEngine(root) {
+    "use strict";
+
+    /** Make data read-only so UI code cannot accidentally change the scenario. */
+    function deepFreeze(value) {
+        if (value && typeof value === "object" && !Object.isFrozen(value)) {
+            Object.values(value).forEach(deepFreeze);
+            Object.freeze(value);
+        }
+        return value;
+    }
+
+    function createEngine(scenarioData) {
+        const data = deepFreeze(scenarioData);
+        const totalDecisions = data.scenes.length;
+        const endings = Object.fromEntries(data.endings.map(ending => [ending.id, ending]));
+        const clampScore = value => Math.max(0, Math.min(100, value));
+        const anyFlag = (flags, names) => names.some(name => flags[name] === true);
+
+        /** Resolve only the scene-start rules specified in the source document. */
+        function getSceneStart(sceneIndex, flags, previousEnvironment) {
+            const start = data.scenes[sceneIndex].start;
+            switch (start.mode) {
+                case "fixed":
+                    return { status: start.status, metrics: start.metrics };
+                case "inherit":
+                    return { ...previousEnvironment };
+                case "backlog":
+                    return {
+                        status: flags.attackActive ? "CRITICAL" : "DEGRADED",
+                        metrics: start.metrics + (flags.attackActive ? " | Threat: ACTIVE" : "")
+                    };
+                case "returnToTraffic":
+                    return {
+                        status: flags.attackActive ? "CRITICAL" :
+                            anyFlag(flags, ["workaroundOnly", "recoveryOverload", "recoveryDataGap", "broadBlock"])
+                                ? "DEGRADED" : "STABLE",
+                        metrics: start.metrics
+                    };
+                default:
+                    throw new Error("Unknown scene-start rule: " + start.mode);
+            }
+        }
+
+        function getPrompt(sceneIndex, flags) {
+            const scene = data.scenes[sceneIndex];
+            return flags.rootCauseFoundEarly && scene.earlyDiagnosisPrompt
+                ? scene.earlyDiagnosisPrompt : scene.prompt;
+        }
+
+        /** All flags begin false. Scene-start alerts do not invent extra flags. */
+        function createInitialState() {
+            const flags = Object.fromEntries(data.flagNames.map(name => [name, false]));
+            return {
+                phase: "choice",
+                sceneIndex: 0,
+                scores: Object.fromEntries(data.scoreKeys.map(key => [key, 50])),
+                flags,
+                environment: getSceneStart(0, flags, null),
+                decisionLog: [],
+                result: null,
+                ending: null
+            };
+        }
+
+        /**
+         * Resolve a current-scene choice exactly once. Invalid, old, or repeated
+         * selections are no-ops; previous state objects are never mutated.
+         */
+        function choose(state, choiceId) {
+            if (state.phase !== "choice") return state;
+            const scene = data.scenes[state.sceneIndex];
+            const choice = scene.choices.find(item => item.id === choiceId);
+            if (!choice) return state;
+
+            const scores = Object.fromEntries(data.scoreKeys.map(key => [
+                key, clampScore(state.scores[key] + choice.effects[key])
+            ]));
+            const flags = { ...state.flags };
+            choice.setFlags.forEach(name => { flags[name] = true; });
+            choice.clearFlags.forEach(name => { flags[name] = false; });
+
+            const risky = choice.riskFlags ? anyFlag(flags, choice.riskFlags) : false;
+            if (choice.reopenOnRisk && risky) flags.incidentReopened = true;
+            // 5C must NOT reopen the incident or silently clear remaining risks.
+            const outcome = choice.outcomes
+                ? choice.outcomes[risky ? "risk" : "safe"] : choice.outcome;
+
+            return {
+                ...state,
+                phase: "consequence",
+                scores,
+                flags,
+                environment: { status: outcome.status, metrics: outcome.metrics },
+                result: { choiceId, consequence: outcome.consequence },
+                decisionLog: [...state.decisionLog, {
+                    choiceId,
+                    sceneId: scene.id,
+                    choiceText: choice.text,
+                    debrief: choice.debrief
+                }]
+            };
+        }
+
+        /** Priority is significant: explicit incident facts beat high scores. */
+        function classifyEnding(state) {
+            const f = state.flags;
+            const s = state.scores;
+            if (f.incidentReopened) return endings.reopened;
+            if (f.accountsCompromised || f.recoveryDataGap) return endings.customerImpact;
+            if (!anyFlag(f, ["workaroundOnly", "broadBlock", "recoveryOverload", "unguardedRamp"]) &&
+                s.rel >= 65 && s.sec >= 60 && s.cost >= 35 && s.jud >= 65) {
+                return endings.strong;
+            }
+            return endings.tradeoffs;
+        }
+
+        /** Continue is the only way out of a consequence, including choice 5. */
+        function continueGame(state) {
+            if (state.phase !== "consequence") return state;
+            if (state.sceneIndex === totalDecisions - 1) {
+                return { ...state, phase: "aftermath", ending: classifyEnding(state) };
+            }
+            const sceneIndex = state.sceneIndex + 1;
+            return {
+                ...state,
+                phase: "choice",
+                sceneIndex,
+                environment: getSceneStart(sceneIndex, state.flags, state.environment),
+                result: null
+            };
+        }
+
+        return Object.freeze({
+            data, totalDecisions, clampScore, createInitialState,
+            choose, continueGame, classifyEnding, getSceneStart, getPrompt
+        });
+    }
+
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = { createEngine };
+    } else {
+        root.ArchitectEngine = Object.freeze({ createEngine });
+    }
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+    </script>
+
+    <!-- 3. USER INTERFACE: retains V2's choose -> consequence -> Continue flow. -->
+    <script id="game-interface">
+(function startGame() {
+    "use strict";
+    const engine = window.ArchitectEngine.createEngine(
+        JSON.parse(document.getElementById("scenario-data").textContent)
+    );
+    const byId = id => document.getElementById(id);
+    const ui = {
+        container: byId("game-container"), title: byId("game-title"),
+        tracker: byId("decision-tracker"), game: byId("game-ui"),
+        status: byId("env-status"), metrics: byId("env-metrics"), time: byId("time-display"),
+        story: byId("story-text"), consequence: byId("consequence-text"),
+        choices: byId("choices-container"), next: byId("continue-btn"),
+        aftermath: byId("aftermath"), endTitle: byId("end-title"),
+        endSummary: byId("end-summary"), endScores: byId("end-scores"),
+        log: byId("decision-log"), replay: byId("replay-btn"),
+        image: byId("scene-image"), imageFallback: byId("scene-image-fallback")
+    };
+    const scoreNodes = {
+        rel: byId("stat-rel"), sec: byId("stat-sec"), cost: byId("stat-cst"),
+        spd: byId("stat-spd"), jud: byId("stat-jud")
+    };
+    const scoreLabels = {
+        rel: "Reliability", sec: "Security", cost: "Cost Efficiency",
+        spd: "Response Speed", jud: "Judgment"
+    };
+    let state = engine.createInitialState();
+    let viewToken = 0;
+    let continueTimer = null;
+    let continueReadyAt = Infinity;
+    // Interaction-only guard: a second click must not land on a newly moved
+    // Continue button and skip the consequence. This does not affect scoring.
+    const CLICK_GUARD_MS = 450;
+
+    function renderEnvironmentAndScores() {
+        ui.status.textContent = state.environment.status;
+        ui.metrics.textContent = state.environment.metrics;
+        const statusClass = "status-" + state.environment.status.toLowerCase();
+        ui.status.className = statusClass;
+        ui.metrics.className = statusClass;
+        for (const key of engine.data.scoreKeys) scoreNodes[key].textContent = state.scores[key];
+        ui.container.dataset.phase = state.phase;
+        ui.container.dataset.scene = String(state.sceneIndex + 1);
+    }
+
+    function cancelContinueGuard() {
+        if (continueTimer !== null) window.clearTimeout(continueTimer);
+        continueTimer = null;
+        continueReadyAt = Infinity;
+        ui.next.disabled = true;
+    }
+
+    function renderScene(moveFocus = false) {
+        cancelContinueGuard();
+        const token = ++viewToken;
+        const scene = engine.data.scenes[state.sceneIndex];
+        ui.title.textContent = "Architect Under Pressure";
+        ui.aftermath.hidden = true;
+        ui.game.hidden = false;
+        ui.tracker.hidden = false;
+        ui.tracker.textContent = `Decision ${state.sceneIndex + 1} of ${engine.totalDecisions}`;
+        ui.time.textContent = scene.time;
+        ui.story.textContent = engine.getPrompt(state.sceneIndex, state.flags);
+        ui.consequence.textContent = "";
+        ui.consequence.hidden = true;
+        ui.next.hidden = true;
+        ui.choices.replaceChildren();
+        // Resolve/render the NEW environment before exposing the new choices.
+        renderEnvironmentAndScores();
+        for (const choice of scene.choices) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "choice-btn";
+            button.dataset.choiceId = choice.id;
+            button.textContent = choice.text;
+            button.addEventListener("click", event => {
+                if (token !== viewToken || state.phase !== "choice" || event.detail > 1) return;
+                choose(choice.id);
+            });
+            ui.choices.appendChild(button);
+        }
+        if (moveFocus) ui.story.focus();
+    }
+
+    function choose(choiceId) {
+        if (state.phase !== "choice") return;
+        // Disable and remove all options synchronously before applying effects.
+        for (const button of ui.choices.querySelectorAll("button")) button.disabled = true;
+        ui.choices.replaceChildren();
+        state = engine.choose(state, choiceId);
+        const token = ++viewToken;
+        renderEnvironmentAndScores();
+        ui.consequence.textContent = state.result.consequence;
+        ui.consequence.hidden = false;
+        ui.consequence.focus();
+        ui.next.hidden = false;
+        ui.next.disabled = true;
+        continueReadyAt = performance.now() + CLICK_GUARD_MS;
+        continueTimer = window.setTimeout(() => {
+            if (token === viewToken && state.phase === "consequence") ui.next.disabled = false;
+            continueTimer = null;
+        }, CLICK_GUARD_MS);
+    }
+
+    function renderAftermath() {
+        cancelContinueGuard();
+        ++viewToken;
+        ui.container.dataset.phase = "aftermath";
+        ui.title.textContent = "AFTERMATH REPORT";
+        ui.tracker.hidden = true;
+        ui.game.hidden = true;
+        ui.aftermath.hidden = false;
+        ui.endTitle.textContent = state.ending.title;
+        // Critical ending text is red but does not need the incident blink.
+        ui.endTitle.style.color = `var(--${state.ending.tone === "critical" ? "alert" :
+            state.ending.tone === "stable" ? "stable" : "warning"}-color)`;
+        ui.endSummary.textContent = state.ending.summary;
+        ui.endScores.replaceChildren();
+        for (const key of engine.data.scoreKeys) {
+            const row = document.createElement("div");
+            row.className = "end-stat";
+            row.dataset.score = key;
+            row.textContent = `${scoreLabels[key]}: ${state.scores[key]}`;
+            ui.endScores.appendChild(row);
+        }
+        ui.log.replaceChildren();
+        for (const entry of state.decisionLog) {
+            const item = document.createElement("li");
+            item.dataset.choiceId = entry.choiceId;
+            const id = document.createElement("span");
+            id.className = "log-choice-id";
+            id.textContent = entry.choiceId;
+            const debrief = document.createElement("p");
+            debrief.className = "log-debrief";
+            debrief.textContent = entry.debrief;
+            item.append(id, debrief);
+            ui.log.appendChild(item);
+        }
+        ui.endTitle.focus();
+        window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
+    ui.next.addEventListener("click", event => {
+        if (event.detail > 1 || ui.next.disabled || state.phase !== "consequence" ||
+            performance.now() < continueReadyAt) return;
+        cancelContinueGuard();
+        state = engine.continueGame(state);
+        if (state.phase === "aftermath") renderAftermath();
+        else renderScene(true);
+    });
+
+    ui.replay.addEventListener("click", () => {
+        state = engine.createInitialState();
+        ui.log.replaceChildren();
+        ui.endScores.replaceChildren();
+        ui.endTitle.textContent = "";
+        ui.endSummary.textContent = "";
+        renderScene(true);
+        window.scrollTo({ top: 0, behavior: "auto" });
+    });
+
+    byId("consulting-btn").addEventListener("click", () => {
+        window.alert("This will redirect to the consulting website!");
+    });
+
+    function showImageFallback() {
+        ui.image.hidden = true;
+        ui.imageFallback.hidden = false;
+    }
+    ui.image.addEventListener("error", showImageFallback);
+    ui.image.addEventListener("load", () => {
+        ui.image.hidden = false;
+        ui.imageFallback.hidden = true;
+    });
+    if (ui.image.complete && ui.image.naturalWidth === 0) showImageFallback();
+
+    // Holding Enter/Space must not generate repeated choice/Continue actions.
+    document.addEventListener("keydown", event => {
+        if (event.repeat && (event.key === "Enter" || event.key === " ") &&
+            event.target instanceof HTMLButtonElement) event.preventDefault();
+    });
+
+    // Read-only inspection for automated QA and future debugging. It returns a
+    // copy; neither tests nor console users can mutate the live game through it.
+    window.ArchitectUnderPressure = Object.freeze({
+        version: 3,
+        getState: () => JSON.parse(JSON.stringify(state))
+    });
+    renderScene();
+})();
+
+    </script>
+</body>
+</html>
